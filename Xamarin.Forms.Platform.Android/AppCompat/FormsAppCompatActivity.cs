@@ -17,6 +17,7 @@ using Xamarin.Forms.PlatformConfiguration.AndroidSpecific.AppCompat;
 using AToolbar = Android.Support.V7.Widget.Toolbar;
 using AColor = Android.Graphics.Color;
 using ARelativeLayout = Android.Widget.RelativeLayout;
+using Xamarin.Forms.Internal;
 using Xamarin.Forms.Internals;
 
 #endregion
@@ -83,7 +84,8 @@ namespace Xamarin.Forms.Platform.Android
 
 		protected void LoadApplication(Application application)
 		{
-			if (!_activityCreated)
+			Profile.Push();
+			if(!_activityCreated)
 			{
 				throw new InvalidOperationException("Activity OnCreate was not called prior to loading the application. Did you forget a base.OnCreate call?");
 			}
@@ -127,7 +129,21 @@ namespace Xamarin.Forms.Platform.Android
 
 			application.PropertyChanged += AppOnPropertyChanged;
 
+			if (application?.MainPage != null)
+			{
+				var iver = Android.Platform.GetRenderer(application.MainPage);
+				if (iver != null)
+				{
+					iver.Dispose();
+					application.MainPage.ClearValue(Android.Platform.RendererProperty);
+				}
+			}
+
+			Profile.PopPush(nameof(SetMainPage));
+
 			SetMainPage();
+
+			Profile.Pop();
 		}
 
 		protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
